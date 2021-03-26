@@ -146,7 +146,7 @@ function Pagination() {
 							<th>Last Name</th>
 							<th>Job Title</th>
 							<th>Phone Number</th>
-							<th>Job Title</th>
+							<th>Job Type</th>
 							<th>Email</th>
 						</tr>
 					</thead>
@@ -159,7 +159,7 @@ function Pagination() {
 								<td>{person.lastName}</td>
 								<td>{person.jobTitle}</td>
 								<td>{person.phoneNumber}</td>
-								<td>{person.jobTitle}</td>
+								<td>{person.jobType}</td>
 								<td>{person.email}</td>
 							</tr>
 						))}

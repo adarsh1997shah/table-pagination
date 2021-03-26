@@ -6,7 +6,8 @@ export const MainWrapper = styled.div`
 `;
 
 export const TableWrapper = styled.div`
-	min-height: 400px;
+	min-height: 350px;
+	height: 350px;
 	overflow: auto;
 `;
 

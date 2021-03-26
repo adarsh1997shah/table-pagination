@@ -14,6 +14,7 @@ code {
 
 table {
 	border-collapse: collapse;
+	width: 100%;
 }
 
 td,
@@ -26,6 +27,9 @@ th {
 th {
 	color: rgba(0, 0, 0, 0.87);
 	text-align: center;
+	position: sticky;
+	top: 0;
+	background-color: white;
 }
 
 th:nth-child(1) {
