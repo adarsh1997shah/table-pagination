@@ -125,6 +125,22 @@ function Pagination() {
 		console.log("next");
 	};
 
+	const hanadleFirstNameSort = () => {
+		const data = [...pagination.currentData];
+
+		data.sort((a, b) => {
+			if (a.firstName > b.firstName) {
+				return 1;
+			} else if (a.firstName < b.firstName) {
+				return -1;
+			} else {
+				return 0;
+			}
+		});
+
+		setPaginationData((prev) => ({ ...prev, currentData: data }));
+	};
+
 	console.log(pagination);
 
 	return (
@@ -142,7 +158,7 @@ function Pagination() {
 					<thead>
 						<tr>
 							<th>ID</th>
-							<th>First Name</th>
+							<th onClick={hanadleFirstNameSort}>First Name</th>
 							<th>Last Name</th>
 							<th>Job Title</th>
 							<th>Phone Number</th>
