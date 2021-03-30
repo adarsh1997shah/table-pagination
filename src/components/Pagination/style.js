@@ -13,6 +13,10 @@ export const TableWrapper = styled.div`
 
 export const Table = styled.table`
 	white-space: nowrap;
+
+	.sort {
+		cursor: pointer;
+	}
 `;
 
 export const ButtonWrapper = styled.div`

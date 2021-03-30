@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { getFakeData } from "../../lib/helper";
+import { getFakeData, sort } from "./lib/helper";
+import Search from "./Search";
 
 import {
 	TableWrapper,
@@ -11,17 +12,19 @@ import {
 
 function Pagination() {
 	const [fakeData] = useState(getFakeData(145));
+	const [searchData, setSearchData] = useState(fakeData);
+	const [sortQuery, setSortQuery] = useState("");
 	const [pagination, setPagination] = useState({
 		offset: 10,
 		currentPageNumber: 1,
 		pageCount: 1,
-		currentData: [],
+		currentData: searchData.slice(0, 10),
 		buttons: [],
 	});
 
 	const [buttonPagination, setbuttonPagination] = useState({
-		offset: 3,
-		maxButtonShow: 5,
+		offset: 4,
+		maxButtonShow: 10,
 		currentButtonList: [],
 	});
 
@@ -35,24 +38,71 @@ function Pagination() {
 		return buttons;
 	}, []);
 
+	const getButtonPagination = useCallback(
+		(currentPageNumber) => {
+			let buttonFrom, buttonEnd;
+
+			if (
+				currentPageNumber <=
+				buttonPagination.maxButtonShow - buttonPagination.offset
+			) {
+				buttonFrom = 0;
+				buttonEnd = buttonPagination.maxButtonShow;
+			} else if (
+				currentPageNumber + buttonPagination.offset >=
+				pagination.pageCount
+			) {
+				buttonFrom =
+					pagination.pageCount - buttonPagination.maxButtonShow < 0
+						? 0
+						: pagination.pageCount - buttonPagination.maxButtonShow;
+				buttonEnd = pagination.pageCount;
+			} else {
+				buttonFrom =
+					currentPageNumber -
+					(buttonPagination.maxButtonShow - buttonPagination.offset);
+				buttonEnd = currentPageNumber + buttonPagination.offset;
+			}
+
+			return [buttonFrom, buttonEnd];
+		},
+		[
+			buttonPagination.maxButtonShow,
+			buttonPagination.offset,
+			pagination.pageCount,
+		]
+	);
+
+	const getPagination = useCallback(
+		(currentPageNumber) => {
+			const from = (Number(currentPageNumber) - 1) * pagination.offset;
+			const to = from + pagination.offset;
+
+			return [from, to];
+		},
+		[pagination.offset]
+	);
+
 	useEffect(() => {
+		const pageCount = Math.ceil(searchData.length / pagination.offset);
+
 		setPagination((prev) => ({
 			...prev,
-			pageCount: Math.ceil(fakeData.length / pagination.offset),
-			currentData: fakeData.slice(0, pagination.offset),
-			buttons: createPageButtons(pagination.pageCount),
+			currentPageNumber: searchData.length ? 1 : 0,
+			currentData: searchData.slice(0, prev.offset),
+			pageCount,
+			buttons: createPageButtons(pageCount),
 		}));
 
 		setbuttonPagination((prev) => ({
 			...prev,
-			currentButtonList: createPageButtons(pagination.pageCount).slice(
+			currentButtonList: createPageButtons(pageCount).slice(
 				0,
 				buttonPagination.maxButtonShow
 			),
 		}));
 	}, [
-		fakeData,
-		pagination.dataNumber,
+		searchData,
 		pagination.offset,
 		buttonPagination.maxButtonShow,
 		createPageButtons,
@@ -60,33 +110,18 @@ function Pagination() {
 	]);
 
 	const setPaginationData = (currentPageNumber) => {
-		const from = (Number(currentPageNumber) - 1) * pagination.offset;
-		const to = from + pagination.offset;
-		let buttonFrom, buttonEnd;
+		// console.log("currentPageNumber", currentPageNumber);
+		let [from, to] = getPagination(currentPageNumber);
+		let [buttonFrom, buttonEnd] = getButtonPagination(currentPageNumber);
 
-		if (
-			currentPageNumber <=
-			buttonPagination.maxButtonShow - buttonPagination.offset
-		) {
-			buttonFrom = 0;
-			buttonEnd = buttonPagination.maxButtonShow;
-		} else if (
-			currentPageNumber + buttonPagination.offset >=
-			pagination.pageCount
-		) {
-			buttonFrom = pagination.pageCount - buttonPagination.maxButtonShow;
-			buttonEnd = pagination.pageCount;
-		} else {
-			buttonFrom =
-				currentPageNumber -
-				(buttonPagination.maxButtonShow - buttonPagination.offset);
-			buttonEnd = currentPageNumber + buttonPagination.offset;
-		}
+		// console.log("from", from, "to", to);
+		// console.log("bfrom", buttonFrom, "bto", buttonEnd);
+		// console.log("offset", pagination.offset);
 
 		setPagination((prev) => ({
 			...prev,
 			currentPageNumber: Number(currentPageNumber),
-			currentData: fakeData.slice(from, to),
+			currentData: searchData.slice(from, to),
 		}));
 
 		setbuttonPagination((prev) => ({
@@ -125,67 +160,175 @@ function Pagination() {
 		console.log("next");
 	};
 
+	// List of sorting tables
 	const hanadleFirstNameSort = () => {
 		const data = [...pagination.currentData];
 
-		data.sort((a, b) => {
-			if (a.firstName > b.firstName) {
-				return 1;
-			} else if (a.firstName < b.firstName) {
-				return -1;
-			} else {
-				return 0;
-			}
-		});
+		const sortData = sort(data, "firstName");
 
-		setPaginationData((prev) => ({ ...prev, currentData: data }));
+		setPagination((prev) => ({
+			...prev,
+			currentData: sortData,
+		}));
+		setSortQuery("firstName");
+	};
+
+	const hanadleLastNameSort = () => {
+		const data = [...pagination.currentData];
+
+		const sortData = sort(data, "lastName");
+
+		setPagination((prev) => ({
+			...prev,
+			currentData: sortData,
+		}));
+
+		setSortQuery("lastName");
+	};
+
+	const hanadleJobTitleSort = () => {
+		const data = [...pagination.currentData];
+
+		const sortData = sort(data, "jobTitle");
+
+		setPagination((prev) => ({
+			...prev,
+			currentData: sortData,
+		}));
+		setSortQuery("jobTitle");
+	};
+
+	const hanadleJobTypeSort = () => {
+		const data = [...pagination.currentData];
+
+		const sortData = sort(data, "jobType");
+
+		setPagination((prev) => ({
+			...prev,
+			currentData: sortData,
+		}));
+		setSortQuery("jobType");
+	};
+
+	// Handle search query by first name.
+	const showSearchResult = (text) => {
+		const searchResult = fakeData.filter((data) =>
+			data.firstName.toLowerCase().includes(text.toLowerCase())
+		);
+
+		setSearchData(searchResult);
+	};
+
+	// Changing the amount of data shown on particular page.
+	const handleOffsetSelect = (e) => {
+		// let currentPageNumber;
+
+		// if (Number(e.target.value) > pagination.offset) {
+		// 	currentPageNumber = Math.ceil(
+		// 		pagination.currentPageNumber /
+		// 			Math.ceil(Number(e.target.value) / pagination.offset)
+		// 	);
+		// } else {
+		// 	currentPageNumber = Math.ceil(
+		// 		pagination.currentPageNumber *
+		// 			Math.ceil(pagination.offset / Number(e.target.value))
+		// 	);
+		// }
+
+		console.log(e.target.value);
+		setPagination((prev) => ({
+			...prev,
+			offset: Number(e.target.value),
+		}));
 	};
 
 	console.log(pagination);
+	// console.log(searchData);
 
 	return (
 		<MainWrapper>
-			<h3>Table With Pagination</h3>
+			<h3>Table With Pagination and sorting of particular colums</h3>
+			<Search showSearchResult={showSearchResult} />
 			<DescriptionWrapper>
-				<h4>{fakeData.length} Results</h4>
+				<h4>
+					Showing{" "}
+					{pagination.currentData.length
+						? (Number(pagination.currentPageNumber) - 1) * pagination.offset + 1
+						: 0}{" "}
+					to{" "}
+					{pagination.currentData.length
+						? (Number(pagination.currentPageNumber) - 1) * pagination.offset +
+						  pagination.currentData.length
+						: 0}{" "}
+					of {searchData.length} Results
+				</h4>
 				<h4>
 					Page
-					{pagination.currentPageNumber}/{pagination.pageCount}
+					{pagination.currentData.length ? pagination.currentPageNumber : 0}/
+					{pagination.pageCount}
 				</h4>
 			</DescriptionWrapper>
+			<div>
+				Show{" "}
+				<select value={pagination.offset} onChange={handleOffsetSelect}>
+					<option value="10">10</option>
+					<option value="20">20</option>
+					<option value="30">30</option>
+				</select>{" "}
+				entries
+			</div>
 			<TableWrapper>
 				<Table>
 					<thead>
 						<tr>
 							<th>ID</th>
-							<th onClick={hanadleFirstNameSort}>First Name</th>
-							<th>Last Name</th>
-							<th>Job Title</th>
+							<th className="sort" onClick={hanadleFirstNameSort}>
+								First Name{" "}
+								{sortQuery === "firstName" ? <span>&#8679;</span> : null}
+							</th>
+							<th className="sort" onClick={hanadleLastNameSort}>
+								Last Name{" "}
+								{sortQuery === "lastName" ? <span>&#8679;</span> : null}
+							</th>
+							<th className="sort" onClick={hanadleJobTitleSort}>
+								Job Title{" "}
+								{sortQuery === "jobTitle" ? <span>&#8679;</span> : null}
+							</th>
 							<th>Phone Number</th>
-							<th>Job Type</th>
+							<th className="sort" onClick={hanadleJobTypeSort}>
+								Job Type {sortQuery === "jobType" ? <span>&#8679;</span> : null}
+							</th>
 							<th>Email</th>
 						</tr>
 					</thead>
 
 					<tbody>
-						{pagination.currentData.map((person) => (
-							<tr key={person.id}>
-								<td>{String(person.id).split("-")[0]}</td>
-								<td>{person.firstName}</td>
-								<td>{person.lastName}</td>
-								<td>{person.jobTitle}</td>
-								<td>{person.phoneNumber}</td>
-								<td>{person.jobType}</td>
-								<td>{person.email}</td>
+						{pagination.currentData.length ? (
+							pagination.currentData.map((person) => (
+								<tr key={person.id}>
+									<td>{String(person.id).split("-")[0]}</td>
+									<td>{person.firstName}</td>
+									<td>{person.lastName}</td>
+									<td>{person.jobTitle}</td>
+									<td>{person.phoneNumber}</td>
+									<td>{person.jobType}</td>
+									<td>{person.email}</td>
+								</tr>
+							))
+						) : (
+							<tr>
+								<td colSpan={7}>
+									<h4 style={{ margin: 0 }}>No matching records found</h4>
+								</td>
 							</tr>
-						))}
+						)}
 					</tbody>
 				</Table>
 			</TableWrapper>
 
 			<ButtonWrapper>
 				<button
-					disabled={pagination.currentPageNumber === 1}
+					disabled={pagination.currentPageNumber <= 1}
 					onClick={handlePagePrev}
 					className="prev"
 				>
