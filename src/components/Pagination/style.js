@@ -55,6 +55,10 @@ export const ButtonWrapper = styled.div`
 			outline: none;
 		}
 	}
+
+	button:disabled {
+		cursor: not-allowed;
+	}
 `;
 
 export const DescriptionWrapper = styled.div`
